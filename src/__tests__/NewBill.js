@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
- import { fireEvent, screen } from "@testing-library/dom"
+ import { fireEvent, screen, waitFor } from "@testing-library/dom"
  import NewBillUI from "../views/NewBillUI.js"
  import BillsUI from "../views/BillsUI.js";
  import NewBill from "../containers/NewBill.js"
@@ -15,11 +15,62 @@
  
  jest.mock("../app/Store", () => mockStore)
  
- const onNavigate = (pathname) => {
-   document.body.innerHTML = ROUTES({pathname});
- };
+
  
- 
+ describe("Given I am connected as an employee", () => {
+  describe("When I am on new Bill Page", () => {
+    it("should display mail icon highlighted", async () => {
+
+      Object.defineProperty(window, 'localStorage', { value: localStorageMock })
+      window.localStorage.setItem('user', JSON.stringify({
+        type: 'Employee'
+      }))
+      const root = document.createElement("div")
+      root.setAttribute("id", "root")
+      document.body.append(root)
+      router()
+      window.onNavigate(ROUTES_PATH.NewBill)
+      await waitFor(() => screen.getByTestId('icon-mail'))
+      const mailIcon = screen.getByTestId('icon-mail')
+      //check if dashboard icon is highlighted with the class 'active-icon
+      expect(mailIcon.className).toBe("active-icon")
+    })
+
+  })
+  describe("when I submit the form with empty fields", () => {
+    test("then I should stay on new Bill page", () => {
+      window.onNavigate(ROUTES_PATH.NewBill);
+      const newBill = new NewBill({
+        document,
+        onNavigate,
+        mockStore,
+        localStorage: window.localStorage,
+      });
+
+      expect(screen.getByTestId("expense-name").value).toBe("");
+      expect(screen.getByTestId("datepicker").value).toBe("");
+      expect(screen.getByTestId("amount").value).toBe("");
+      expect(screen.getByTestId("vat").value).toBe("");
+      expect(screen.getByTestId("pct").value).toBe("");
+      expect(screen.getByTestId("file").value).toBe("");
+
+      const form = screen.getByTestId("form-new-bill");
+      const handleSubmit = jest.fn((e) => newBill.handleSubmit(e));
+
+      form.addEventListener("submit", handleSubmit);
+      fireEvent.submit(form);
+      expect(handleSubmit).toHaveBeenCalled();
+      expect(form).toBeTruthy();
+    });
+  });
+});
+
+
+const onNavigate = (pathname) => {
+  document.body.innerHTML = ROUTES({pathname});
+};
+
+
  describe("Given I am connected as an employee and i'm on NeWBill page", () => {
    beforeEach(() => {
      localStorage.setItem(
