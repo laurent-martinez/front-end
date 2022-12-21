@@ -56,7 +56,6 @@
 
       const form = screen.getByTestId("form-new-bill");
       const handleSubmit = jest.fn((e) => newBill.handleSubmit(e));
-
       form.addEventListener("submit", handleSubmit);
       fireEvent.submit(form);
       expect(handleSubmit).toHaveBeenCalled();
@@ -156,17 +155,30 @@ const onNavigate = (pathname) => {
        expect(handleSubmit).toHaveBeenCalled();
      })
      describe('When an error occurs', () => { 
-         test('should fail with 500 message error', async () => { 
-             jest.spyOn(mockStore, "bills")
-             Object.defineProperty(
-                 window,
-                 'localStorage',
-                 { value: localStorageMock }
-             )
-             window.localStorage.setItem('user', JSON.stringify({
-               type: 'Employee',
-               email: "a@a"
-             }))
+       jest.spyOn(mockStore, "bills")
+       Object.defineProperty(
+         window,
+         'localStorage',
+         { value: localStorageMock }
+         )
+         window.localStorage.setItem('user', JSON.stringify({
+           type: 'Employee',
+           email: "a@a"
+          }))
+          it("Should fetches bills from an API and fails with 404 message error", async () => {
+            mockStore.bills.mockImplementationOnce(() => {
+              return {
+                list: () => {
+                  return Promise.reject(new Error("Erreur 404"));
+                },
+              };
+            });
+            const html = BillsUI({ error: "Erreur 404" })
+            document.body.innerHTML = html
+            const message = await screen.getByText(/Erreur 404/)
+            expect(message).toBeTruthy()
+          });
+          test('should fail with 500 message error', async () => { 
          mockStore.bills.mockImplementationOnce(() => {
            return {
              create : () =>  {
